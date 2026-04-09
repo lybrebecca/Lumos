@@ -1,0 +1,77 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 整个 App 的幻彩渐变背景 */
+#root {
+  min-height: 100vh;
+  background: linear-gradient(145deg, #e8e0f7 0%, #d6eef5 30%, #d5f0e8 60%, #f5e8d5 100%);
+  background-attachment: fixed;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* 手机容器，限制最大宽度，模拟 App 外观 */
+.app-container {
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 毛玻璃卡片（习惯卡片、弹窗等通用样式） */
+.glass-card {
+  background: rgba(255, 255, 255, 0.35);
+  border: 0.5px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 18px;
+}
+
+/* 打卡飞心动效 */
+@keyframes floatHeart {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+  60%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.5); }
+}
+
+/* 卡片点击弹跳 */
+@keyframes cardPop {
+  0%, 100% { transform: scale(1); }
+  30%       { transform: scale(0.93); }
+  65%       { transform: scale(1.05); }
+  85%       { transform: scale(0.98); }
+}
+
+/* 双击撤销抖动 */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+/* 积分数字弹跳 */
+@keyframes ptsBump {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.35); }
+}
+
+/* 里程碑横幅出现 */
+@keyframes bannerIn {
+  0%   { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* 里程碑横幅消失 */
+@keyframes bannerOut {
+  0%   { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
