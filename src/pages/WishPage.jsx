@@ -31,6 +31,7 @@ function WishPage() {
     }
   }
 
+  // 添加心愿
   function handleAdd({ name, emoji, cost }) {
     const newWish = {
       id: Date.now(),
@@ -42,6 +43,7 @@ function WishPage() {
     saveAll([...wishes, newWish])
   }
 
+  // 编辑心愿
   function handleEdit({ name, emoji, cost }) {
     const newWishes = wishes.map(w =>
       w.id === editingWish.id ? { ...w, name, emoji, cost } : w
@@ -50,26 +52,25 @@ function WishPage() {
     setEditingWish(null)
   }
 
+  // 删除心愿
   function handleDelete(id) {
     saveAll(wishes.filter(w => w.id !== id))
   }
 
+  // 兑换心愿
   function handleRedeem(wish) {
     if (pts.remain < wish.cost) return
     const newPts = {
       remain: pts.remain - wish.cost,
       total: pts.total,
     }
+    const newWishes = wishes.filter(w => w.id !== wish.id)
     const doneWish = {
       ...wish,
-      isDone: true,
       doneAt: new Date().toLocaleDateString('zh-CN'),
     }
-    const newWishes = [
-      ...wishes.filter(w => w.id !== wish.id),
-      doneWish,
-    ]
-    saveAll(newWishes, newPts)
+    const withDone = [...newWishes, { ...doneWish, isDone: true }]
+    saveAll(withDone, newPts)
     setConfirmRedeem(null)
   }
 
@@ -79,6 +80,7 @@ function WishPage() {
   return (
     <div style={{ padding: '20px 16px 16px', position: 'relative' }}>
 
+      {/* 标题 */}
       <div style={{
         fontSize: '18px',
         fontWeight: '500',
@@ -88,6 +90,7 @@ function WishPage() {
         心愿
       </div>
 
+      {/* 积分显示 */}
       <div style={{
         display: 'flex',
         alignItems: 'baseline',
@@ -101,7 +104,10 @@ function WishPage() {
         }}>
           {pts.remain}
         </span>
-        <span style={{ fontSize: '12px', color: 'rgba(40,30,70,0.4)' }}>
+        <span style={{
+          fontSize: '12px',
+          color: 'rgba(40,30,70,0.4)',
+        }}>
           / 总计 {pts.total} pts
         </span>
         <span style={{
@@ -113,6 +119,7 @@ function WishPage() {
         </span>
       </div>
 
+      {/* 心愿列表 */}
       {activeWishes.map(wish => {
         const progress = Math.min(pts.remain / wish.cost, 1)
         const canRedeem = pts.remain >= wish.cost
@@ -130,6 +137,7 @@ function WishPage() {
               marginBottom: '9px',
             }}
           >
+            {/* 顶部：emoji + 名字 + 编辑删除 */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -165,6 +173,7 @@ function WishPage() {
                   需要 {wish.cost} pts
                 </div>
               </div>
+              {/* 编辑、删除按钮（默认心愿不显示删除） */}
               <div style={{ display: 'flex', gap: '5px' }}>
                 <div
                   onClick={() => setEditingWish(wish)}
@@ -197,6 +206,7 @@ function WishPage() {
               </div>
             </div>
 
+            {/* 进度条 */}
             <div style={{
               height: '5px',
               borderRadius: '3px',
@@ -215,6 +225,7 @@ function WishPage() {
               }} />
             </div>
 
+            {/* 底部：进度文字 + 兑换按钮 */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -230,6 +241,7 @@ function WishPage() {
                   ? '已达成！可以兑换了'
                   : `${pts.remain} / ${wish.cost} pts · 还差 ${wish.cost - pts.remain} 次`}
               </span>
+
               {canRedeem && (
                 <div
                   onClick={() => isConfirming
@@ -246,6 +258,7 @@ function WishPage() {
                       ? 'rgba(140,110,200,0.75)'
                       : 'rgba(140,110,200,0.45)',
                     color: 'rgba(255,255,255,0.95)',
+                    transition: 'background 0.2s',
                   }}
                 >
                   {isConfirming ? '确认兑换' : '兑换'}
@@ -256,6 +269,7 @@ function WishPage() {
         )
       })}
 
+      {/* 添加心愿按钮 */}
       <button
         onClick={() => setShowAddModal(true)}
         style={{
@@ -274,6 +288,7 @@ function WishPage() {
         + 添加心愿
       </button>
 
+      {/* 已实现区域 */}
       {doneWishes.length > 0 && (
         <div style={{
           borderTop: '0.5px solid rgba(255,255,255,0.3)',
@@ -329,6 +344,7 @@ function WishPage() {
         </div>
       )}
 
+      {/* 添加心愿弹窗 */}
       {showAddModal && (
         <AddWishModal
           onAdd={handleAdd}
@@ -336,6 +352,7 @@ function WishPage() {
         />
       )}
 
+      {/* 编辑心愿弹窗 */}
       {editingWish && (
         <AddWishModal
           existingWish={editingWish}
