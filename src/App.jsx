@@ -21,12 +21,9 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* 当前页面内容 */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {renderPage()}
       </div>
-
-      {/* 底部导航栏 */}
       <TabBar
         activePage={activePage}
         onTabChange={setActivePage}
