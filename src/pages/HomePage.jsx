@@ -3,6 +3,7 @@ import HabitCard from '../components/HabitCard'
 import PtsChip from '../components/PtsChip'
 import MilestoneBanner from '../components/MilestoneBanner'
 import AddHabitModal from '../components/AddHabitModal'
+import EditHabitModal from '../components/EditHabitModal'
 import { doCheckin, undoCheckin, getHabitColor } from '../utils/habitLogic'
 import { loadHabits, saveHabits, loadPts, savePts } from '../utils/storage'
 import { getDefaultHabits } from '../data/defaultHabits'
@@ -17,14 +18,15 @@ function HomePage() {
   const [pts, setPts] = useState(() => loadPts())
 
   const [milestone, setMilestone] = useState(null)
-  // milestone 长这样：{ emoji, text, bonus } 或 null
 
   const [showAddModal, setShowAddModal] = useState(false)
+
+  const [editingHabit, setEditingHabit] = useState(null)
 
   const screenRef = useRef(null)
   const ptsChipRef = useRef(null)
 
-  // ── 每次 habits 或 pts 变化，自动存档 ──────────
+  // ── 自动存档 ───────────────────────────────────
   useEffect(() => {
     saveHabits(habits)
   }, [habits])
@@ -52,33 +54,27 @@ function HomePage() {
 
     const { updatedHabit, pointsEarned, milestoneText, bonus } = doCheckin(habit)
 
-    // 更新习惯列表
     const newHabits = habits.map(h =>
       h.id === habitId ? updatedHabit : h
     )
     setHabits(newHabits)
 
-    // 更新积分
     const newPts = {
       remain: pts.remain + pointsEarned,
       total: pts.total + pointsEarned,
     }
     setPts(newPts)
 
-    // 触发卡片弹跳动画
     if (cardRef?.triggerPop) cardRef.triggerPop()
-
-    // 飞心动画
     spawnFloatingHeart(cardRef)
 
-    // 如果触发了里程碑，显示横幅
     if (milestoneText) {
       setMilestone({ emoji: updatedHabit.emoji, text: milestoneText, bonus })
     }
   }
 
   // ── 撤销 ───────────────────────────────────────
-  function handleUndo(habitId, cardRef) {
+  function handleUndo(habitId) {
     const habit = habits.find(h => h.id === habitId)
     if (!habit) return
 
@@ -96,11 +92,9 @@ function HomePage() {
       remain: Math.max(0, prev.remain - pointsLost),
       total: Math.max(0, prev.total - pointsLost),
     }))
-
-    if (cardRef?.triggerShake) cardRef.triggerShake()
   }
 
-  // ── 添加新习惯 ─────────────────────────────────
+  // ── 添加习惯 ───────────────────────────────────
   function handleAddHabit({ name, emoji }) {
     const colorIndex = habits.length
     const newHabit = {
@@ -116,6 +110,19 @@ function HomePage() {
       ...getHabitColor(colorIndex),
     }
     setHabits(prev => [...prev, newHabit])
+  }
+
+  // ── 编辑习惯 ───────────────────────────────────
+  function handleEditSave(habitId, { name, emoji }) {
+    const newHabits = habits.map(h =>
+      h.id === habitId ? { ...h, name, emoji } : h
+    )
+    setHabits(newHabits)
+  }
+
+  // ── 删除习惯 ───────────────────────────────────
+  function handleDelete(habitId) {
+    setHabits(prev => prev.filter(h => h.id !== habitId))
   }
 
   // ── 飞心动画 ───────────────────────────────────
@@ -194,7 +201,7 @@ function HomePage() {
             habit={habit}
             onCheckin={handleCheckin}
             onUndo={handleUndo}
-            screenRef={screenRef}
+            onLongPress={(id) => setEditingHabit(habits.find(h => h.id === id))}
           />
         ))}
       </div>
@@ -235,6 +242,16 @@ function HomePage() {
         <AddHabitModal
           onAdd={handleAddHabit}
           onClose={() => setShowAddModal(false)}
+        />
+      )}
+
+      {/* 编辑习惯弹窗 */}
+      {editingHabit && (
+        <EditHabitModal
+          habit={editingHabit}
+          onSave={handleEditSave}
+          onDelete={handleDelete}
+          onClose={() => setEditingHabit(null)}
         />
       )}
     </div>

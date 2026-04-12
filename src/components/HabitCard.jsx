@@ -1,33 +1,51 @@
 import { useRef } from 'react'
 import { DOUBLE_CLICK_MS } from '../utils/constants'
 
-function HabitCard({ habit, onCheckin, onUndo, screenRef }) {
+function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
   const lastClickTime = useRef(0)
   const clickTimer = useRef(null)
+  const longPressTimer = useRef(null)
+  const isLongPress = useRef(false)
+  const cardRef = useRef(null)
 
+  // ── 长按检测 ──────────────────────────────────
+  function handlePointerDown() {
+    isLongPress.current = false
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true
+      onLongPress(habit.id)
+    }, 600)
+  }
+
+  function handlePointerUp() {
+    clearTimeout(longPressTimer.current)
+  }
+
+  // ── 单击 / 双击 ───────────────────────────────
   function handleClick() {
+    if (isLongPress.current) return
+
     const now = Date.now()
     const timeSinceLast = now - lastClickTime.current
 
     if (timeSinceLast < DOUBLE_CLICK_MS) {
-      // 双击：撤销
       clearTimeout(clickTimer.current)
       lastClickTime.current = 0
+      triggerShakeAnim()
       onUndo(habit.id)
       return
     }
 
-    // 单击：等待一下，确认不是双击再打卡
     lastClickTime.current = now
     clickTimer.current = setTimeout(() => {
       if (lastClickTime.current === now) {
+        triggerPopAnim()
         onCheckin(habit.id, cardRef)
       }
     }, 260)
   }
 
-  const cardRef = useRef(null)
-
+  // ── 动画 ──────────────────────────────────────
   function triggerPopAnim() {
     const el = cardRef.current
     if (!el) return
@@ -46,7 +64,6 @@ function HabitCard({ habit, onCheckin, onUndo, screenRef }) {
     setTimeout(() => { el.style.animation = '' }, 400)
   }
 
-  // 把动画方法暴露给父组件调用
   cardRef.triggerPop = triggerPopAnim
   cardRef.triggerShake = triggerShakeAnim
 
@@ -56,6 +73,9 @@ function HabitCard({ habit, onCheckin, onUndo, screenRef }) {
     <div
       ref={cardRef}
       onClick={handleClick}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
       style={{
         background: 'rgba(255,255,255,0.35)',
         border: '0.5px solid rgba(255,255,255,0.55)',
@@ -104,7 +124,7 @@ function HabitCard({ habit, onCheckin, onUndo, screenRef }) {
         </div>
       </div>
 
-      {/* 右侧：打卡次数按钮 */}
+      {/* 右侧按钮 */}
       <div style={{
         width: '32px',
         height: '32px',
