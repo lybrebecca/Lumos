@@ -5,9 +5,10 @@ import MilestoneBanner from '../components/MilestoneBanner'
 import AddHabitModal from '../components/AddHabitModal'
 import EditHabitModal from '../components/EditHabitModal'
 import { doCheckin, undoCheckin, getHabitColor } from '../utils/habitLogic'
-import { loadHabits, saveHabits, loadPts, savePts } from '../utils/storage'
+import { loadHabits, saveHabits, loadPts, savePts, loadArchivedHabits, saveArchivedHabits } from '../utils/storage'
 import { getDefaultHabits } from '../data/defaultHabits'
 import { TAGLINES } from '../utils/constants'
+
 
 function HomePage() {
   // ── 状态 ──────────────────────────────────────
@@ -121,9 +122,24 @@ function HomePage() {
   }
 
   // ── 删除习惯 ───────────────────────────────────
-  function handleDelete(habitId) {
-    setHabits(prev => prev.filter(h => h.id !== habitId))
+  // 归档习惯：从首页移除，但保留历史数据
+function handleArchive(habitId) {
+  const habit = habits.find(h => h.id === habitId)
+  if (!habit) return
+
+  // 加上归档时间
+  const archivedHabit = {
+    ...habit,
+    archivedAt: new Date().toISOString(),
   }
+
+  // 存入归档列表
+  const existing = loadArchivedHabits()
+  saveArchivedHabits([...existing, archivedHabit])
+
+  // 从首页移除
+  setHabits(prev => prev.filter(h => h.id !== habitId))
+}
 
   // ── 飞心动画 ───────────────────────────────────
   function spawnFloatingHeart(cardRef) {
@@ -251,6 +267,7 @@ function HomePage() {
           habit={editingHabit}
           onSave={handleEditSave}
           onDelete={handleDelete}
+          onArchive={handleArchive}
           onClose={() => setEditingHabit(null)}
         />
       )}

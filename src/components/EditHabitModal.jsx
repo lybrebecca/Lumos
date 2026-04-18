@@ -5,10 +5,11 @@ const EMOJI_OPTIONS = [
   '🌿','💧','😴','🧹','📝','🎯','🌅','🍎',
 ]
 
-function EditHabitModal({ habit, onSave, onDelete, onClose }) {
+function EditHabitModal({ habit, onSave, onDelete, onArchive, onClose }) {
   const [name, setName] = useState(habit.name)
   const [emoji, setEmoji] = useState(habit.emoji)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmArchive, setConfirmArchive] = useState(false)
 
   function handleSave() {
     if (!name.trim()) return
@@ -17,11 +18,14 @@ function EditHabitModal({ habit, onSave, onDelete, onClose }) {
   }
 
   function handleDelete() {
-    if (!confirmDelete) {
-      setConfirmDelete(true)
-      return
-    }
+    if (!confirmDelete) { setConfirmDelete(true); return }
     onDelete(habit.id)
+    onClose()
+  }
+
+  function handleArchive() {
+    if (!confirmArchive) { setConfirmArchive(true); return }
+    onArchive(habit.id)
     onClose()
   }
 
@@ -39,16 +43,15 @@ function EditHabitModal({ habit, onSave, onDelete, onClose }) {
       }}
     >
       <div
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         style={{
           width: '100%',
-          background: 'rgba(240,235,255,0.92)',
+          background: 'rgba(240,235,255,0.95)',
           backdropFilter: 'blur(20px)',
           borderRadius: '24px 24px 0 0',
           padding: '24px 20px 36px',
         }}
       >
-        {/* 标题 */}
         <div style={{
           fontSize: '16px',
           fontWeight: '500',
@@ -70,7 +73,7 @@ function EditHabitModal({ habit, onSave, onDelete, onClose }) {
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             maxLength={15}
             style={{
               width: '100%',
@@ -87,7 +90,7 @@ function EditHabitModal({ habit, onSave, onDelete, onClose }) {
         </div>
 
         {/* Emoji 选择 */}
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '20px' }}>
           <div style={{
             fontSize: '12px',
             color: 'rgba(40,30,70,0.5)',
@@ -100,7 +103,7 @@ function EditHabitModal({ habit, onSave, onDelete, onClose }) {
             gridTemplateColumns: 'repeat(8, 1fr)',
             gap: '8px',
           }}>
-            {EMOJI_OPTIONS.map((e) => (
+            {EMOJI_OPTIONS.map(e => (
               <div
                 key={e}
                 onClick={() => setEmoji(e)}
@@ -142,10 +145,33 @@ function EditHabitModal({ habit, onSave, onDelete, onClose }) {
             fontWeight: '500',
             color: 'rgba(255,255,255,0.95)',
             cursor: name.trim() ? 'pointer' : 'default',
-            marginBottom: '10px',
+            marginBottom: '8px',
           }}
         >
           保存
+        </div>
+
+        {/* 归档按钮 */}
+        <div
+          onClick={handleArchive}
+          style={{
+            width: '100%',
+            padding: '13px',
+            borderRadius: '14px',
+            background: confirmArchive
+              ? 'rgba(180,140,60,0.6)'
+              : 'rgba(180,140,60,0.15)',
+            textAlign: 'center',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: confirmArchive
+              ? 'rgba(255,255,255,0.95)'
+              : 'rgba(140,100,30,0.7)',
+            cursor: 'pointer',
+            marginBottom: '8px',
+          }}
+        >
+          {confirmArchive ? '确认归档（从首页隐藏）' : '📦 归档这个习惯'}
         </div>
 
         {/* 删除按钮 */}
