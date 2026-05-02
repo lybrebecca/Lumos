@@ -1,18 +1,19 @@
 import { useState } from 'react'
 
 const EMOJI_OPTIONS = [
-  '🍽️','🎬','✈️','👟','🎮','📖','🛍️','🧴',
-  '🎵','🏖️','🍰','💆','🎁','🌸','🍵','🛋️',
+  '🍽️', '🎬', '✈️', '👟', '🎮', '📖', '🛍️', '🧴',
+  '🎵', '🏖️', '🍰', '💆', '🎁', '🌸', '🍵', '🛋️',
 ]
 
 function AddWishModal({ onAdd, onClose, existingWish }) {
   const [name, setName] = useState(existingWish?.name || '')
   const [emoji, setEmoji] = useState(existingWish?.emoji || '🎁')
   const [cost, setCost] = useState(existingWish?.cost || '')
+  const [repeatable, setRepeatable] = useState(existingWish?.repeatable || false)
 
   function handleSave() {
     if (!name.trim() || !cost || Number(cost) <= 0) return
-    onAdd({ name: name.trim(), emoji, cost: Number(cost) })
+    onAdd({ name: name.trim(), emoji, cost: Number(cost), repeatable })
     onClose()
   }
 
@@ -110,6 +111,62 @@ function AddWishModal({ onAdd, onClose, existingWish }) {
             }}
           />
         </div>
+        {/* 可重复开关 */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          padding: '12px 14px',
+          background: 'rgba(255,255,255,0.5)',
+          borderRadius: '12px',
+          border: '0.5px solid rgba(180,160,220,0.3)',
+        }}>
+          <div>
+            <div style={{
+              fontSize: '13px',
+              fontWeight: '500',
+              color: 'rgba(40,30,70,0.85)',
+            }}>
+              可重复兑换
+            </div>
+            <div style={{
+              fontSize: '11px',
+              color: 'rgba(40,30,70,0.4)',
+              marginTop: '2px',
+            }}>
+              开启后每次兑换扣分，不进入已实现
+            </div>
+          </div>
+          <div
+            onClick={() => setRepeatable(v => !v)}
+            style={{
+              width: '44px',
+              height: '26px',
+              borderRadius: '13px',
+              background: repeatable
+                ? 'rgba(140,110,200,0.7)'
+                : 'rgba(180,160,220,0.25)',
+              position: 'relative',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              flexShrink: 0,
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: '3px',
+              left: repeatable ? '21px' : '3px',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              background: '#fff',
+              transition: 'left 0.2s',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+            }} />
+          </div>
+        </div>
+
 
         {/* Emoji 选择 */}
         <div style={{ marginBottom: '24px' }}>

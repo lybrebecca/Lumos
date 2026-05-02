@@ -61,6 +61,10 @@ function LongPressCell({ onLongPress, disabled }) {
         height: '20px',
         borderRadius: '50%',
         cursor: disabled ? 'default' : 'pointer',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        touchAction: 'manipulation',
       }}
     />
   )
