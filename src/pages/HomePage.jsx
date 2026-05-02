@@ -7,27 +7,39 @@ import EditHabitModal from '../components/EditHabitModal'
 import { doCheckin, undoCheckin, getHabitColor } from '../utils/habitLogic'
 import { loadHabits, saveHabits, loadPts, savePts, loadArchivedHabits, saveArchivedHabits } from '../utils/storage'
 import { getDefaultHabits } from '../data/defaultHabits'
-import { TAGLINES } from '../utils/constants'
+import { TAGLINES, MAX_HABITS } from '../utils/constants'
+import { getTodayStr } from '../utils/habitLogic'
 
+function resetTodayCountIfNeeded(habits) {
+  const today = getTodayStr()
+  let changed = false
+  const updated = habits.map(h => {
+    // 如果最后打卡日期不是今天，重置今日计数
+    if (h.lastCheckinDate !== today && h.todayCount !== 0) {
+      changed = true
+      return { ...h, todayCount: 0 }
+    }
+    return h
+  })
+  return { updated, changed }
+}
 
 function HomePage() {
-  // ── 状态 ──────────────────────────────────────
   const [habits, setHabits] = useState(() => {
-    return loadHabits() || getDefaultHabits()
+    const loaded = loadHabits() || getDefaultHabits()
+    const { updated, changed } = resetTodayCountIfNeeded(loaded)
+    if (changed) saveHabits(updated)
+    return updated
   })
 
   const [pts, setPts] = useState(() => loadPts())
-
   const [milestone, setMilestone] = useState(null)
-
   const [showAddModal, setShowAddModal] = useState(false)
-
   const [editingHabit, setEditingHabit] = useState(null)
 
   const screenRef = useRef(null)
   const ptsChipRef = useRef(null)
 
-  // ── 自动存档 ───────────────────────────────────
   useEffect(() => {
     saveHabits(habits)
   }, [habits])
@@ -36,10 +48,8 @@ function HomePage() {
     savePts(pts)
   }, [pts])
 
-  // ── 今日文案 ───────────────────────────────────
   const tagline = TAGLINES[new Date().getDay() % TAGLINES.length]
 
-  // ── 今日日期显示 ───────────────────────────────
   function getTodayDisplay() {
     const d = new Date()
     const days = ['周日','周一','周二','周三','周四','周五','周六']
@@ -48,7 +58,6 @@ function HomePage() {
     return `${days[d.getDay()]} · ${months[d.getMonth()]}${d.getDate()}日`
   }
 
-  // ── 打卡 ───────────────────────────────────────
   function handleCheckin(habitId, cardRef) {
     const habit = habits.find(h => h.id === habitId)
     if (!habit) return
@@ -74,7 +83,6 @@ function HomePage() {
     }
   }
 
-  // ── 撤销 ───────────────────────────────────────
   function handleUndo(habitId) {
     const habit = habits.find(h => h.id === habitId)
     if (!habit) return
@@ -95,7 +103,6 @@ function HomePage() {
     }))
   }
 
-  // ── 添加习惯 ───────────────────────────────────
   function handleAddHabit({ name, emoji }) {
     const colorIndex = habits.length
     const newHabit = {
@@ -113,7 +120,6 @@ function HomePage() {
     setHabits(prev => [...prev, newHabit])
   }
 
-  // ── 编辑习惯 ───────────────────────────────────
   function handleEditSave(habitId, { name, emoji }) {
     const newHabits = habits.map(h =>
       h.id === habitId ? { ...h, name, emoji } : h
@@ -121,27 +127,24 @@ function HomePage() {
     setHabits(newHabits)
   }
 
-  // ── 删除习惯 ───────────────────────────────────
-  // 归档习惯：从首页移除，但保留历史数据
-function handleArchive(habitId) {
-  const habit = habits.find(h => h.id === habitId)
-  if (!habit) return
-
-  // 加上归档时间
-  const archivedHabit = {
-    ...habit,
-    archivedAt: new Date().toISOString(),
+  function handleDelete(habitId) {
+    setHabits(prev => prev.filter(h => h.id !== habitId))
   }
 
-  // 存入归档列表
-  const existing = loadArchivedHabits()
-  saveArchivedHabits([...existing, archivedHabit])
+  function handleArchive(habitId) {
+    const habit = habits.find(h => h.id === habitId)
+    if (!habit) return
 
-  // 从首页移除
-  setHabits(prev => prev.filter(h => h.id !== habitId))
-}
+    const archivedHabit = {
+      ...habit,
+      archivedAt: new Date().toISOString(),
+    }
 
-  // ── 飞心动画 ───────────────────────────────────
+    const existing = loadArchivedHabits()
+    saveArchivedHabits([...existing, archivedHabit])
+    setHabits(prev => prev.filter(h => h.id !== habitId))
+  }
+
   function spawnFloatingHeart(cardRef) {
     const screen = screenRef.current
     const chip = ptsChipRef.current
@@ -170,7 +173,6 @@ function handleArchive(habitId) {
     setTimeout(() => heart.remove(), 800)
   }
 
-  // ── 渲染 ───────────────────────────────────────
   return (
     <div
       ref={screenRef}
@@ -181,7 +183,6 @@ function handleArchive(habitId) {
         overflow: 'hidden',
       }}
     >
-      {/* 顶部：日期 + 积分 */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -209,7 +210,6 @@ function handleArchive(habitId) {
         </div>
       </div>
 
-      {/* 习惯卡片列表 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
         {habits.map(habit => (
           <HabitCard
@@ -222,8 +222,7 @@ function handleArchive(habitId) {
         ))}
       </div>
 
-      {/* 添加习惯按钮 */}
-      {habits.length < 10 && (
+      {habits.length < MAX_HABITS && (
         <button
           onClick={() => setShowAddModal(true)}
           style={{
@@ -243,7 +242,6 @@ function handleArchive(habitId) {
         </button>
       )}
 
-      {/* 里程碑横幅 */}
       {milestone && (
         <MilestoneBanner
           emoji={milestone.emoji}
@@ -253,7 +251,6 @@ function handleArchive(habitId) {
         />
       )}
 
-      {/* 添加习惯弹窗 */}
       {showAddModal && (
         <AddHabitModal
           onAdd={handleAddHabit}
@@ -261,7 +258,6 @@ function handleArchive(habitId) {
         />
       )}
 
-      {/* 编辑习惯弹窗 */}
       {editingHabit && (
         <EditHabitModal
           habit={editingHabit}

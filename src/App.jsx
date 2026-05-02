@@ -20,14 +20,27 @@ function App() {
   }
 
   return (
-    <div className="app-container">
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+    <div className="app-container" style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+    }}>
+      {/* 页面内容，占满剩余空间，可滚动 */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+      }}>
         {renderPage()}
       </div>
-      <TabBar
-        activePage={activePage}
-        onTabChange={setActivePage}
-      />
+
+      {/* TabBar 固定在底部 */}
+      <div style={{ flexShrink: 0 }}>
+        <TabBar
+          activePage={activePage}
+          onTabChange={setActivePage}
+        />
+      </div>
     </div>
   )
 }

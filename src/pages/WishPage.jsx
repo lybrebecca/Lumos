@@ -8,6 +8,7 @@ const DEFAULT_WISH = {
   emoji: '🍽️',
   cost: 30,
   isDefault: true,
+  repeatable: false,
 }
 
 function WishPage() {
@@ -31,46 +32,65 @@ function WishPage() {
     }
   }
 
-  // 添加心愿
-  function handleAdd({ name, emoji, cost }) {
+  // ── 添加心愿 ───────────────────────────────────
+  function handleAdd({ name, emoji, cost, repeatable }) {
     const newWish = {
       id: Date.now(),
       name,
       emoji,
       cost,
+      repeatable: repeatable || false,
+      redeemCount: 0,
       isDefault: false,
     }
     saveAll([...wishes, newWish])
   }
 
-  // 编辑心愿
-  function handleEdit({ name, emoji, cost }) {
+  // ── 编辑心愿 ───────────────────────────────────
+  function handleEdit({ name, emoji, cost, repeatable }) {
     const newWishes = wishes.map(w =>
-      w.id === editingWish.id ? { ...w, name, emoji, cost } : w
+      w.id === editingWish.id
+        ? { ...w, name, emoji, cost, repeatable: repeatable || false }
+        : w
     )
     saveAll(newWishes)
     setEditingWish(null)
   }
 
-  // 删除心愿
+  // ── 删除心愿 ───────────────────────────────────
   function handleDelete(id) {
     saveAll(wishes.filter(w => w.id !== id))
   }
 
-  // 兑换心愿
+  // ── 兑换心愿 ───────────────────────────────────
   function handleRedeem(wish) {
     if (pts.remain < wish.cost) return
     const newPts = {
       remain: pts.remain - wish.cost,
       total: pts.total,
     }
-    const newWishes = wishes.filter(w => w.id !== wish.id)
-    const doneWish = {
-      ...wish,
-      doneAt: new Date().toLocaleDateString('zh-CN'),
+
+    if (wish.repeatable) {
+      // 可重复：扣分 + 兑换次数 +1，留在列表
+      const newWishes = wishes.map(w =>
+        w.id === wish.id
+          ? { ...w, redeemCount: (w.redeemCount || 0) + 1 }
+          : w
+      )
+      saveAll(newWishes, newPts)
+    } else {
+      // 不可重复：进入已实现
+      const doneWish = {
+        ...wish,
+        isDone: true,
+        doneAt: new Date().toLocaleDateString('zh-CN'),
+      }
+      const newWishes = [
+        ...wishes.filter(w => w.id !== wish.id),
+        doneWish,
+      ]
+      saveAll(newWishes, newPts)
     }
-    const withDone = [...newWishes, { ...doneWish, isDone: true }]
-    saveAll(withDone, newPts)
     setConfirmRedeem(null)
   }
 
@@ -137,7 +157,7 @@ function WishPage() {
               marginBottom: '9px',
             }}
           >
-            {/* 顶部：emoji + 名字 + 编辑删除 */}
+            {/* 顶部：emoji + 名字 + 标签 + 编辑删除 */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -157,24 +177,55 @@ function WishPage() {
               }}>
                 {wish.emoji}
               </div>
-              <div style={{ flex: 1 }}>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* 名字 + 可重复标签 */}
                 <div style={{
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: 'rgba(40,30,70,0.9)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}>
-                  {wish.name}
+                  <div style={{
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: 'rgba(40,30,70,0.9)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {wish.name}
+                  </div>
+                  {wish.repeatable && (
+                    <div style={{
+                      fontSize: '10px',
+                      color: 'rgba(100,80,140,0.7)',
+                      background: 'rgba(160,130,200,0.2)',
+                      borderRadius: '4px',
+                      padding: '1px 6px',
+                      flexShrink: 0,
+                    }}>
+                      可重复
+                    </div>
+                  )}
                 </div>
+
+                {/* 需要积分 + 兑换次数 */}
                 <div style={{
                   fontSize: '11px',
                   color: 'rgba(40,30,70,0.4)',
-                  marginTop: '1px',
+                  marginTop: '2px',
+                  display: 'flex',
+                  gap: '8px',
                 }}>
-                  需要 {wish.cost} pts
+                  <span>需要 {wish.cost} pts</span>
+                  {wish.redeemCount > 0 && (
+                    <span>已兑换 {wish.redeemCount} 次</span>
+                  )}
                 </div>
               </div>
-              {/* 编辑、删除按钮（默认心愿不显示删除） */}
-              <div style={{ display: 'flex', gap: '5px' }}>
+
+              {/* 编辑、删除按钮 */}
+              <div style={{ display: 'flex', gap: '5px', flexShrink: 0 }}>
                 <div
                   onClick={() => setEditingWish(wish)}
                   style={{
@@ -238,7 +289,9 @@ function WishPage() {
                   : 'rgba(40,30,70,0.4)',
               }}>
                 {canRedeem
-                  ? '已达成！可以兑换了'
+                  ? wish.repeatable
+                    ? '可以兑换了！'
+                    : '已达成！可以兑换了'
                   : `${pts.remain} / ${wish.cost} pts · 还差 ${wish.cost - pts.remain} 次`}
               </span>
 
@@ -270,23 +323,25 @@ function WishPage() {
       })}
 
       {/* 添加心愿按钮 */}
-      <button
-        onClick={() => setShowAddModal(true)}
-        style={{
-          width: '100%',
-          padding: '11px',
-          borderRadius: '13px',
-          border: '0.5px dashed rgba(160,130,200,0.4)',
-          background: 'rgba(255,255,255,0.2)',
-          color: 'rgba(100,80,140,0.5)',
-          fontSize: '13px',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          marginBottom: '16px',
-        }}
-      >
-        + 添加心愿
-      </button>
+      {activeWishes.filter(w => !w.isDone).length < 20 && (
+        <button
+          onClick={() => setShowAddModal(true)}
+          style={{
+            width: '100%',
+            padding: '11px',
+            borderRadius: '13px',
+            border: '0.5px dashed rgba(160,130,200,0.4)',
+            background: 'rgba(255,255,255,0.2)',
+            color: 'rgba(100,80,140,0.5)',
+            fontSize: '13px',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            marginBottom: '16px',
+          }}
+        >
+          + 添加心愿
+        </button>
+      )}
 
       {/* 已实现区域 */}
       {doneWishes.length > 0 && (

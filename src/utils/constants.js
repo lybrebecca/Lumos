@@ -41,4 +41,5 @@ export const TAGLINES = [
   // 双击撤销的时间窗口（毫秒）
   export const DOUBLE_CLICK_MS = 1500;
   
-  // 最多同时显示的习惯数量
+// 最多同时显示的习惯数量
+  export const MAX_HABITS = 20;

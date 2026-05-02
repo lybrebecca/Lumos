@@ -21,6 +21,10 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
     clearTimeout(longPressTimer.current)
   }
 
+  function handlePointerLeave() {
+    clearTimeout(longPressTimer.current)
+  }
+
   // ── 单击 / 双击 ───────────────────────────────
   function handleClick() {
     if (isLongPress.current) return
@@ -75,7 +79,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
       onClick={handleClick}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
+      onPointerLeave={handlePointerLeave}
       style={{
         background: 'rgba(255,255,255,0.35)',
         border: '0.5px solid rgba(255,255,255,0.55)',
@@ -84,6 +88,9 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
         padding: '13px 14px',
         cursor: 'pointer',
         userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        touchAction: 'manipulation',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
