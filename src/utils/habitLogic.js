@@ -10,7 +10,11 @@ function isConsecutiveDay(dateStr1, dateStr2) {
 
 // 获取今天的日期字符串，格式：'2024-01-15'
 export function getTodayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 // 打卡一次，返回更新后的习惯 + 本次获得的积分

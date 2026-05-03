@@ -40,6 +40,23 @@ function HomePage() {
   const screenRef = useRef(null)
   const ptsChipRef = useRef(null)
 
+  // 定时检测：如果过了凌晨12点，重置今日计数
+useEffect(() => {
+  function checkMidnight() {
+    const { updated, changed } = resetTodayCountIfNeeded(
+      loadHabits() || []
+    )
+    if (changed) {
+      setHabits(updated)
+      saveHabits(updated)
+    }
+  }
+
+  // 每分钟检查一次
+  const interval = setInterval(checkMidnight, 60 * 1000)
+  return () => clearInterval(interval)
+}, [])
+
   useEffect(() => {
     saveHabits(habits)
   }, [habits])

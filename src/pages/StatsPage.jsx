@@ -27,7 +27,7 @@ function habitExistsInMonth(habit, year, month) {
 }
 
 const CELL_SIZE = 26
-const NAME_WIDTH = 62
+const NAME_WIDTH = 120
 
 function LongPressCell({ onLongPress, disabled }) {
   const timerRef = useRef(null)
