@@ -11,6 +11,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
   const touchStartY = useRef(0)
   const offsetAtTouchStart = useRef(0)
   const isSwiping = useRef(false)
+  const swipeCancelled = useRef(false)
   const isLongPress = useRef(false)
   const longPressTimer = useRef(null)
   const cardRef = useRef(null)
@@ -24,7 +25,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true
       onLongPress(habit.id)
-    }, 5000)
+    }, 2000)
   }
 
   function cancelLongPress() {
@@ -37,25 +38,48 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
     touchStartY.current = e.touches[0].clientY
     offsetAtTouchStart.current = offset
     isSwiping.current = false
+    swipeCancelled.current = false
     setAnimating(false)
     startLongPress()
   }
 
   function handleTouchMove(e) {
+    // Multi-touch (pinch/zoom): cancel swipe immediately
+    if (e.touches.length > 1) {
+      swipeCancelled.current = true
+      isSwiping.current = false
+      cancelLongPress()
+      setAnimating(true)
+      setOffset(0)
+      return
+    }
+
+    if (swipeCancelled.current) return
+
     const dx = e.touches[0].clientX - touchStartX.current
     const dy = e.touches[0].clientY - touchStartY.current
 
-    if (!isSwiping.current && Math.abs(dx) > 8) {
-      cancelLongPress()
-      isSwiping.current = true
+    if (!isSwiping.current) {
+      const absDx = Math.abs(dx)
+      const absDy = Math.abs(dy)
+
+      // Vertical movement dominates → cancel swipe for this gesture
+      if (absDy > absDx && absDy > 6) {
+        swipeCancelled.current = true
+        cancelLongPress()
+        return
+      }
+
+      // Horizontal movement dominates → lock into swipe mode
+      if (absDx > 8) {
+        cancelLongPress()
+        isSwiping.current = true
+      }
     }
 
     if (!isSwiping.current) return
 
-    if (Math.abs(dx) > Math.abs(dy)) {
-      e.preventDefault()
-    }
-
+    e.preventDefault()
     const newOffset = Math.max(-UNDO_WIDTH, Math.min(0, offsetAtTouchStart.current + dx))
     setOffset(newOffset)
   }
@@ -65,7 +89,8 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
     if (!isSwiping.current) return
 
     setAnimating(true)
-    if (offset < -UNDO_WIDTH / 2) {
+    // Require 80px movement before snapping open
+    if (offset < -80) {
       setOffset(-UNDO_WIDTH)
     } else {
       setOffset(0)
