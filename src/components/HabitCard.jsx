@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
+import { getYesterdayStr } from '../utils/habitLogic'
 
 const UNDO_WIDTH = 76
 
-function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
+function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }) {
   const [offset, setOffset] = useState(0)
   const [animating, setAnimating] = useState(false)
 
@@ -13,7 +14,9 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
   const isLongPress = useRef(false)
   const longPressTimer = useRef(null)
   const cardRef = useRef(null)
-  const wrapRef = useRef(null)
+
+  const yesterdayStr = getYesterdayStr()
+  const yesterdayCount = (habit.logs || []).filter(l => l.date === yesterdayStr).length
 
   // ── 长按检测 ──────────────────────────────────
   function startLongPress() {
@@ -73,7 +76,6 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
   function handleClick() {
     if (isLongPress.current) return
 
-    // 如果撤销面板打开，点卡片关闭
     if (offset !== 0) {
       setAnimating(true)
       setOffset(0)
@@ -105,13 +107,11 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
   cardRef.triggerPop = triggerPopAnim
 
   const { iconBg, btnBg } = habit
+  const pts = habit.pointsPerCheckin ?? 1
 
   return (
-    <div
-      ref={wrapRef}
-      style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}
-    >
-      {/* 红色撤销按钮（底层） */}
+    <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
+      {/* 红色撤销按钮（仅滑动时显示） */}
       <div
         onClick={handleUndoClick}
         style={{
@@ -121,7 +121,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
           bottom: 0,
           width: `${UNDO_WIDTH}px`,
           background: 'rgba(220,60,60,0.85)',
-          display: 'flex',
+          display: offset < 0 ? 'flex' : 'none',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
@@ -134,7 +134,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
         </div>
       </div>
 
-      {/* 卡片主体（上层，可左滑） */}
+      {/* 卡片主体 */}
       <div
         ref={cardRef}
         onClick={handleClick}
@@ -154,7 +154,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
           touchAction: 'pan-y',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          gap: '10px',
           transform: `translateX(${offset}px)`,
           transition: animating ? 'transform 0.25s ease' : 'none',
           position: 'relative',
@@ -162,56 +162,97 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress }) {
         }}
         onTransitionEnd={() => setAnimating(false)}
       >
-        {/* 左侧：emoji + 文字 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* 昨日打卡小格 */}
+        <div
+          onClick={(e) => {
+            e.stopPropagation()
+            onYesterdayCheckin(habit.id)
+          }}
+          style={{
+            flexShrink: 0,
+            width: '34px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '3px',
+          }}
+        >
           <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '12px',
-            background: iconBg,
+            width: '30px',
+            height: '30px',
+            borderRadius: '8px',
+            background: yesterdayCount > 0 ? btnBg : btnBg.replace(/[\d.]+\)$/, '0.18)'),
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '20px',
-            flexShrink: 0,
+            fontSize: yesterdayCount > 0 ? '13px' : '14px',
+            fontWeight: '500',
+            color: yesterdayCount > 0 ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)',
           }}>
-            {habit.emoji}
+            {yesterdayCount > 0 ? yesterdayCount : '+'}
           </div>
-          <div>
-            <div style={{
-              fontSize: '14px',
-              fontWeight: '500',
-              color: 'rgba(40,30,70,0.9)',
-            }}>
-              {habit.name}
-            </div>
-            <div style={{
-              fontSize: '11px',
-              color: 'rgba(40,30,70,0.45)',
-              marginTop: '2px',
-            }}>
-              今日 {habit.todayCount} 次
-              · 累计 {habit.totalCount} 次
-              {habit.streak > 0 && ` · ${habit.streak} 天连击`}
-            </div>
+          <div style={{
+            fontSize: '9px',
+            color: 'rgba(40,30,70,0.35)',
+            lineHeight: 1,
+          }}>
+            昨天
           </div>
         </div>
 
-        {/* 右侧按钮 */}
+        {/* emoji 图标 */}
         <div style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: '10px',
-          background: btnBg,
+          width: '40px',
+          height: '40px',
+          borderRadius: '12px',
+          background: iconBg,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '14px',
-          fontWeight: '500',
-          color: 'rgba(255,255,255,0.95)',
+          fontSize: '20px',
           flexShrink: 0,
         }}>
-          {habit.todayCount > 0 ? habit.todayCount : '+'}
+          {habit.emoji}
+        </div>
+
+        {/* 文字区 */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'rgba(40,30,70,0.9)',
+          }}>
+            {habit.name}
+          </div>
+          <div style={{
+            fontSize: '11px',
+            color: 'rgba(40,30,70,0.45)',
+            marginTop: '2px',
+          }}>
+            今日 {habit.todayCount} 次
+            · 累计 {habit.totalCount} 次
+            {habit.streak > 0 && ` · ${habit.streak} 天连击`}
+            {pts > 1 && ` · +${pts}分/次`}
+          </div>
+        </div>
+
+        {/* 右侧今日打卡按钮 */}
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+          <div style={{
+            width: '32px',
+            height: '30px',
+            borderRadius: '10px',
+            background: btnBg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: 'rgba(255,255,255,0.95)',
+          }}>
+            {habit.todayCount > 0 ? habit.todayCount : '+'}
+          </div>
+          <div style={{ fontSize: '9px', color: 'rgba(40,30,70,0.35)', lineHeight: 1 }}>今天</div>
         </div>
       </div>
     </div>

@@ -17,9 +17,20 @@ export function getTodayStr() {
   return `${year}-${month}-${day}`
 }
 
+// 获取昨天的日期字符串
+export function getYesterdayStr() {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // 打卡一次，返回更新后的习惯 + 本次获得的积分
 export function doCheckin(habit) {
   const today = getTodayStr();
+  const pts = habit.pointsPerCheckin ?? 1;
   const newLog = { date: today, time: new Date().toLocaleTimeString('zh-CN') };
 
   // 更新连击天数
@@ -27,25 +38,20 @@ export function doCheckin(habit) {
   let newStreak = habit.streak;
 
   if (!lastDate) {
-    // 第一次打卡
     newStreak = 1;
   } else if (lastDate === today) {
-    // 今天已经打过卡了，连击不变
     newStreak = habit.streak;
   } else if (isConsecutiveDay(lastDate, today)) {
-    // 昨天打过，连击 +1
     newStreak = habit.streak + 1;
   } else {
-    // 中断了，重新从 1 开始
     newStreak = 1;
   }
 
-  // 检查是否触发里程碑奖励
+  // 检查是否触发里程碑奖励（奖励随每次得分缩放）
   const milestone = MILESTONES[newStreak];
-  const bonus = milestone ? milestone.bonus : 0;
+  const bonus = milestone ? milestone.bonus * pts : 0;
   const milestoneText = milestone ? milestone.text : null;
 
-  // 更新习惯数据
   const updatedHabit = {
     ...habit,
     todayCount: lastDate === today ? habit.todayCount + 1 : 1,
@@ -57,10 +63,22 @@ export function doCheckin(habit) {
 
   return {
     updatedHabit,
-    pointsEarned: 1 + bonus,
+    pointsEarned: pts + bonus,
     milestoneText,
     bonus,
   };
+}
+
+// 补打昨天的卡，返回更新后的习惯 + 本次获得的积分
+export function doBackdatedCheckin(habit, date) {
+  const pts = habit.pointsPerCheckin ?? 1;
+  const newLog = { date, time: new Date().toLocaleTimeString('zh-CN'), backdated: true };
+  const updatedHabit = {
+    ...habit,
+    totalCount: habit.totalCount + 1,
+    logs: [...(habit.logs || []), newLog],
+  };
+  return { updatedHabit, pointsEarned: pts };
 }
 
 // 撤销最近一次打卡
@@ -83,7 +101,7 @@ export function undoCheckin(habit) {
     logs: newLogs,
   };
 
-  return { updatedHabit, pointsLost: 1 };
+  return { updatedHabit, pointsLost: habit.pointsPerCheckin ?? 1 };
 }
 
 // 根据习惯 id 分配颜色（循环使用颜色列表）

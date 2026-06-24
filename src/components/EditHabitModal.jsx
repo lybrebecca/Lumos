@@ -5,15 +5,34 @@ const EMOJI_OPTIONS = [
   '🌿','💧','😴','🧹','📝','🎯','🌅','🍎',
 ]
 
+const inputStyle = {
+  width: '100%',
+  padding: '10px 14px',
+  borderRadius: '12px',
+  border: '0.5px solid rgba(180,160,220,0.4)',
+  background: 'rgba(255,255,255,0.6)',
+  fontSize: '14px',
+  color: 'rgba(40,30,70,0.9)',
+  outline: 'none',
+  fontFamily: 'inherit',
+}
+
+const labelStyle = {
+  fontSize: '12px',
+  color: 'rgba(40,30,70,0.5)',
+  marginBottom: '6px',
+}
+
 function EditHabitModal({ habit, onSave, onDelete, onArchive, onClose }) {
   const [name, setName] = useState(habit.name)
   const [emoji, setEmoji] = useState(habit.emoji)
+  const [pointsPerCheckin, setPointsPerCheckin] = useState(habit.pointsPerCheckin ?? 1)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmArchive, setConfirmArchive] = useState(false)
 
   function handleSave() {
     if (!name.trim()) return
-    onSave(habit.id, { name: name.trim(), emoji })
+    onSave(habit.id, { name: name.trim(), emoji, pointsPerCheckin })
     onClose()
   }
 
@@ -27,6 +46,12 @@ function EditHabitModal({ habit, onSave, onDelete, onArchive, onClose }) {
     if (!confirmArchive) { setConfirmArchive(true); return }
     onArchive(habit.id)
     onClose()
+  }
+
+  function handleEmojiInput(e) {
+    const val = e.target.value
+    const chars = [...val]
+    if (chars.length > 0) setEmoji(chars[chars.length - 1])
   }
 
   return (
@@ -50,6 +75,8 @@ function EditHabitModal({ habit, onSave, onDelete, onArchive, onClose }) {
           backdropFilter: 'blur(20px)',
           borderRadius: '24px 24px 0 0',
           padding: '24px 20px 36px',
+          maxHeight: '85vh',
+          overflowY: 'auto',
         }}
       >
         <div style={{
@@ -63,41 +90,45 @@ function EditHabitModal({ habit, onSave, onDelete, onArchive, onClose }) {
 
         {/* 名字输入 */}
         <div style={{ marginBottom: '16px' }}>
-          <div style={{
-            fontSize: '12px',
-            color: 'rgba(40,30,70,0.5)',
-            marginBottom: '6px',
-          }}>
-            习惯名称
-          </div>
+          <div style={labelStyle}>习惯名称</div>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
             maxLength={15}
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              borderRadius: '12px',
-              border: '0.5px solid rgba(180,160,220,0.4)',
-              background: 'rgba(255,255,255,0.6)',
-              fontSize: '14px',
-              color: 'rgba(40,30,70,0.9)',
-              outline: 'none',
-              fontFamily: 'inherit',
-            }}
+            style={inputStyle}
           />
         </div>
 
         {/* Emoji 选择 */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{
-            fontSize: '12px',
-            color: 'rgba(40,30,70,0.5)',
-            marginBottom: '8px',
-          }}>
-            选择图标
+        <div style={{ marginBottom: '16px' }}>
+          <div style={labelStyle}>选择图标</div>
+
+          {/* 自定义输入 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              background: 'rgba(160,130,210,0.2)',
+              border: '1.5px solid rgba(160,130,210,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '22px',
+              flexShrink: 0,
+            }}>
+              {emoji}
+            </div>
+            <input
+              type="text"
+              placeholder="或输入任意 emoji"
+              onChange={handleEmojiInput}
+              style={{ ...inputStyle, flex: 1 }}
+            />
           </div>
+
+          {/* 预设网格 */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(8, 1fr)',
@@ -128,6 +159,18 @@ function EditHabitModal({ habit, onSave, onDelete, onArchive, onClose }) {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* 每次得分 */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={labelStyle}>每次得分</div>
+          <input
+            type="number"
+            value={pointsPerCheckin}
+            min={1}
+            onChange={(e) => setPointsPerCheckin(Math.max(1, Number(e.target.value) || 1))}
+            style={{ ...inputStyle, width: '100px' }}
+          />
         </div>
 
         {/* 保存按钮 */}

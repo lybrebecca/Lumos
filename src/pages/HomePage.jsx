@@ -4,7 +4,7 @@ import PtsChip from '../components/PtsChip'
 import MilestoneBanner from '../components/MilestoneBanner'
 import AddHabitModal from '../components/AddHabitModal'
 import EditHabitModal from '../components/EditHabitModal'
-import { doCheckin, undoCheckin, getHabitColor } from '../utils/habitLogic'
+import { doCheckin, undoCheckin, doBackdatedCheckin, getHabitColor, getYesterdayStr } from '../utils/habitLogic'
 import { loadHabits, saveHabits, loadPts, savePts, loadArchivedHabits, saveArchivedHabits } from '../utils/storage'
 import { getDefaultHabits } from '../data/defaultHabits'
 import { TAGLINES, MAX_HABITS } from '../utils/constants'
@@ -120,12 +120,29 @@ useEffect(() => {
     }))
   }
 
-  function handleAddHabit({ name, emoji }) {
+  function handleYesterdayCheckin(habitId) {
+    const habit = habits.find(h => h.id === habitId)
+    if (!habit) return
+
+    const yesterday = getYesterdayStr()
+    const alreadyDone = (habit.logs || []).filter(l => l.date === yesterday).length
+
+    // 允许多次补打，没有上限
+    const { updatedHabit, pointsEarned } = doBackdatedCheckin(habit, yesterday)
+    setHabits(prev => prev.map(h => h.id === habitId ? updatedHabit : h))
+    setPts(prev => ({
+      remain: prev.remain + pointsEarned,
+      total: prev.total + pointsEarned,
+    }))
+  }
+
+  function handleAddHabit({ name, emoji, pointsPerCheckin }) {
     const colorIndex = habits.length
     const newHabit = {
       id: Date.now(),
       name,
       emoji,
+      pointsPerCheckin: pointsPerCheckin ?? 1,
       todayCount: 0,
       totalCount: 0,
       streak: 0,
@@ -137,9 +154,9 @@ useEffect(() => {
     setHabits(prev => [...prev, newHabit])
   }
 
-  function handleEditSave(habitId, { name, emoji }) {
+  function handleEditSave(habitId, { name, emoji, pointsPerCheckin }) {
     const newHabits = habits.map(h =>
-      h.id === habitId ? { ...h, name, emoji } : h
+      h.id === habitId ? { ...h, name, emoji, pointsPerCheckin: pointsPerCheckin ?? 1 } : h
     )
     setHabits(newHabits)
   }
@@ -233,6 +250,7 @@ useEffect(() => {
             habit={habit}
             onCheckin={handleCheckin}
             onUndo={handleUndo}
+            onYesterdayCheckin={handleYesterdayCheckin}
             onLongPress={(id) => setEditingHabit(habits.find(h => h.id === id))}
           />
         ))}
