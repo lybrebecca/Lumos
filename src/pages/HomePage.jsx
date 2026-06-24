@@ -173,21 +173,20 @@ useEffect(() => {
     const pr = chip.getBoundingClientRect()
 
     const heart = document.createElement('div')
-    heart.textContent = '♡'
+    heart.textContent = '❤️'
     heart.style.cssText = `
       position: absolute;
-      font-size: 16px;
-      color: rgba(180,130,210,0.9);
+      font-size: 36px;
       pointer-events: none;
       z-index: 100;
-      left: ${cr.left - sr.left + cr.width * 0.5}px;
-      top: ${cr.top - sr.top + cr.height * 0.4}px;
+      left: ${cr.left - sr.left + cr.width * 0.5 - 18}px;
+      top: ${cr.top - sr.top + cr.height * 0.3}px;
       --tx: ${pr.left - sr.left + pr.width * 0.5 - (cr.left - sr.left + cr.width * 0.5)}px;
-      --ty: ${pr.top - sr.top + pr.height * 0.5 - (cr.top - sr.top + cr.height * 0.4)}px;
-      animation: floatHeart 0.75s cubic-bezier(0.25,0.46,0.45,0.94) forwards;
+      --ty: ${pr.top - sr.top + pr.height * 0.5 - (cr.top - sr.top + cr.height * 0.3)}px;
+      animation: floatHeart 1s cubic-bezier(0.25,0.46,0.45,0.94) forwards;
     `
     screen.appendChild(heart)
-    setTimeout(() => heart.remove(), 800)
+    setTimeout(() => heart.remove(), 1100)
   }
 
   return (

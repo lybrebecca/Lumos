@@ -20,16 +20,13 @@ function App() {
   }
 
   return (
-    <div className="app-container" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-    }}>
+    <div className="app-container">
       {/* 页面内容，占满剩余空间，可滚动 */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
         overflowX: 'hidden',
+        minHeight: 0,
       }}>
         {renderPage()}
       </div>
