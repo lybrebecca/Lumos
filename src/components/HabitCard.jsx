@@ -135,7 +135,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
   const pts = habit.pointsPerCheckin ?? 1
 
   return (
-    <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', borderRadius: '18px' }}>
       {/* 红色撤销按钮（仅滑动时显示） */}
       <div
         onClick={handleUndoClick}
@@ -151,6 +151,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
           justifyContent: 'center',
           cursor: 'pointer',
           borderRadius: '18px',
+          zIndex: 0,
         }}
       >
         <div style={{ textAlign: 'center', color: '#fff' }}>
@@ -184,6 +185,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
           transition: animating ? 'transform 0.25s ease' : 'none',
           position: 'relative',
           zIndex: 1,
+          isolation: 'isolate',
         }}
         onTransitionEnd={() => setAnimating(false)}
       >

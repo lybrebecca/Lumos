@@ -27,6 +27,7 @@ function AddHabitModal({ onAdd, onClose }) {
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('🏃')
   const [pointsPerCheckin, setPointsPerCheckin] = useState(1)
+  const [ptsInput, setPtsInput] = useState('1')
 
   function handleAdd() {
     if (!name.trim()) return
@@ -152,9 +153,14 @@ function AddHabitModal({ onAdd, onClose }) {
           <div style={labelStyle}>每次得分</div>
           <input
             type="number"
-            value={pointsPerCheckin}
+            value={ptsInput}
             min={1}
-            onChange={(e) => setPointsPerCheckin(Math.max(1, Number(e.target.value) || 1))}
+            onChange={(e) => setPtsInput(e.target.value)}
+            onBlur={() => {
+              const n = Math.max(1, parseInt(ptsInput) || 1)
+              setPtsInput(String(n))
+              setPointsPerCheckin(n)
+            }}
             style={{ ...inputStyle, width: '100px' }}
           />
         </div>
