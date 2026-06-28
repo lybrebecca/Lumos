@@ -89,8 +89,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
     if (!isSwiping.current) return
 
     setAnimating(true)
-    // Require 80px movement before snapping open
-    if (offset < -80) {
+    if (offset < -UNDO_WIDTH / 2) {
       setOffset(-UNDO_WIDTH)
     } else {
       setOffset(0)
