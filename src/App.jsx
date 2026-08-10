@@ -4,7 +4,7 @@ import TabBar from './components/TabBar'
 import HomePage from './pages/HomePage'
 import StatsPage from './pages/StatsPage'
 import WishPage from './pages/WishPage'
-import ForestPage from './pages/ForestPage'
+import ArchivePage from './pages/ArchivePage'
 
 function App() {
   const [activePage, setActivePage] = useState('home')
@@ -14,7 +14,7 @@ function App() {
       case 'home':   return <HomePage />
       case 'stats':  return <StatsPage />
       case 'wish':   return <WishPage />
-      case 'forest': return <ForestPage />
+      case 'forest': return <ArchivePage />
       default:       return <HomePage />
     }
   }

@@ -40,15 +40,21 @@ const TABS = [
     },
     {
       id: 'forest',
-      label: '森林',
+      label: '归档',
       icon: (active) => (
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-          <path d="M4 18c0-4 3-7 7-7s7 3 7 7"
+          <rect x="3" y="7" width="16" height="12" rx="2"
+            stroke={active ? 'rgba(80,60,120,0.85)' : 'rgba(80,60,120,0.35)'}
+            strokeWidth="1.3"/>
+          <path d="M3 10h16"
             stroke={active ? 'rgba(80,60,120,0.85)' : 'rgba(80,60,120,0.35)'}
             strokeWidth="1.3" strokeLinecap="round"/>
-          <path d="M11 11V6M8 8l3-3 3 3"
+          <path d="M6 4h10"
             stroke={active ? 'rgba(80,60,120,0.85)' : 'rgba(80,60,120,0.35)'}
-            strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            strokeWidth="1.3" strokeLinecap="round"/>
+          <path d="M9 14h4"
+            stroke={active ? 'rgba(80,60,120,0.85)' : 'rgba(80,60,120,0.35)'}
+            strokeWidth="1.3" strokeLinecap="round"/>
         </svg>
       ),
     },

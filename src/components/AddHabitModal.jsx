@@ -11,7 +11,7 @@ const inputStyle = {
   borderRadius: '12px',
   border: '0.5px solid rgba(180,160,220,0.4)',
   background: 'rgba(255,255,255,0.6)',
-  fontSize: '14px',
+  fontSize: '16px',
   color: 'rgba(40,30,70,0.9)',
   outline: 'none',
   fontFamily: 'inherit',
