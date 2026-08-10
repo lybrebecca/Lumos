@@ -116,15 +116,20 @@ function StatsPage() {
             <div style={{ display: 'flex', gap: '4px' }}>
               {days.map(day => {
                 const count = getCountForDate(habit, day.dateStr)
-                let bg, textColor
-                if (day.isToday) {
-                  bg = withOpacity(habit.btnBg, '0.8')
+                let bg, border, textColor
+                if (count > 0) {
+                  bg = day.isToday
+                    ? withOpacity(habit.btnBg, '0.9')
+                    : withOpacity(habit.btnBg, '0.65')
+                  border = 'none'
                   textColor = 'rgba(255,255,255,0.95)'
-                } else if (count > 0) {
-                  bg = withOpacity(habit.btnBg, '0.65')
-                  textColor = 'rgba(255,255,255,0.9)'
+                } else if (day.isToday) {
+                  bg = 'rgba(255,255,255,0.4)'
+                  border = '1.5px solid rgba(140,110,200,0.5)'
+                  textColor = 'transparent'
                 } else {
                   bg = 'rgba(255,255,255,0.4)'
+                  border = '0.5px solid rgba(160,130,200,0.2)'
                   textColor = 'transparent'
                 }
                 return (
@@ -133,7 +138,7 @@ function StatsPage() {
                     height: '26px',
                     borderRadius: '50%',
                     background: bg,
-                    border: count === 0 && !day.isToday ? '0.5px solid rgba(160,130,200,0.2)' : 'none',
+                    border,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
