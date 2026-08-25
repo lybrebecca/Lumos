@@ -93,9 +93,9 @@ useEffect(() => {
     setPts(newPts)
 
     if (cardRef?.triggerPop) cardRef.triggerPop()
-    spawnFloatingHeart(cardRef)
+    if (habit.type !== 'bad') spawnFloatingHeart(cardRef)
 
-    if (milestoneText) {
+    if (milestoneText && habit.type !== 'bad') {
       setMilestone({ emoji: updatedHabit.emoji, text: milestoneText, bonus })
     }
   }
@@ -136,12 +136,16 @@ useEffect(() => {
     }))
   }
 
-  function handleAddHabit({ name, emoji, pointsPerCheckin }) {
+  const BAD_COLORS = { btnBg: 'rgba(210,80,80,0.85)', iconBg: 'rgba(210,80,80,0.15)' }
+
+  function handleAddHabit({ name, emoji, pointsPerCheckin, type }) {
     const colorIndex = habits.length
+    const colors = type === 'bad' ? BAD_COLORS : getHabitColor(colorIndex)
     const newHabit = {
       id: Date.now(),
       name,
       emoji,
+      type: type ?? 'good',
       pointsPerCheckin: pointsPerCheckin ?? 1,
       todayCount: 0,
       totalCount: 0,
@@ -149,15 +153,20 @@ useEffect(() => {
       lastCheckinDate: null,
       logs: [],
       colorIndex,
-      ...getHabitColor(colorIndex),
+      ...colors,
     }
     setHabits(prev => [...prev, newHabit])
   }
 
-  function handleEditSave(habitId, { name, emoji, pointsPerCheckin }) {
-    const newHabits = habits.map(h =>
-      h.id === habitId ? { ...h, name, emoji, pointsPerCheckin: pointsPerCheckin ?? 1 } : h
-    )
+  function handleEditSave(habitId, { name, emoji, pointsPerCheckin, type }) {
+    const newHabits = habits.map(h => {
+      if (h.id !== habitId) return h
+      const newType = type ?? 'good'
+      let colors = {}
+      if (newType === 'bad') colors = BAD_COLORS
+      else if (h.type === 'bad') colors = getHabitColor(h.colorIndex)
+      return { ...h, name, emoji, pointsPerCheckin: pointsPerCheckin ?? 1, type: newType, ...colors }
+    })
     setHabits(newHabits)
   }
 
@@ -243,18 +252,43 @@ useEffect(() => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
-        {habits.map(habit => (
-          <HabitCard
-            key={habit.id}
-            habit={habit}
-            onCheckin={handleCheckin}
-            onUndo={handleUndo}
-            onYesterdayCheckin={handleYesterdayCheckin}
-            onLongPress={(id) => setEditingHabit(habits.find(h => h.id === id))}
-          />
-        ))}
-      </div>
+      {(() => {
+        const goodHabits = habits.filter(h => h.type !== 'bad')
+        const badHabits = habits.filter(h => h.type === 'bad')
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+            {goodHabits.map(habit => (
+              <HabitCard
+                key={habit.id}
+                habit={habit}
+                onCheckin={handleCheckin}
+                onUndo={handleUndo}
+                onYesterdayCheckin={handleYesterdayCheckin}
+                onLongPress={(id) => setEditingHabit(habits.find(h => h.id === id))}
+              />
+            ))}
+            {badHabits.length > 0 && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '2px 0' }}>
+                  <div style={{ flex: 1, height: '0.5px', background: 'rgba(200,80,80,0.2)' }} />
+                  <div style={{ fontSize: '10px', color: 'rgba(180,60,60,0.5)', fontWeight: '500' }}>坏习惯</div>
+                  <div style={{ flex: 1, height: '0.5px', background: 'rgba(200,80,80,0.2)' }} />
+                </div>
+                {badHabits.map(habit => (
+                  <HabitCard
+                    key={habit.id}
+                    habit={habit}
+                    onCheckin={handleCheckin}
+                    onUndo={handleUndo}
+                    onYesterdayCheckin={handleYesterdayCheckin}
+                    onLongPress={(id) => setEditingHabit(habits.find(h => h.id === id))}
+                  />
+                ))}
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       {habits.length < MAX_HABITS && (
         <button

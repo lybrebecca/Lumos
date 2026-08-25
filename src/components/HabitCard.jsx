@@ -258,7 +258,7 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
             今日 {habit.todayCount} 次
             · 累计 {habit.totalCount} 次
             {habit.streak > 0 && ` · ${habit.streak} 天连击`}
-            {pts > 1 && ` · +${pts}分/次`}
+            {pts !== 1 && ` · ${pts > 0 ? '+' : ''}${pts}分/次`}
           </div>
         </div>
 

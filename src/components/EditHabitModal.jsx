@@ -26,14 +26,21 @@ const labelStyle = {
 function EditHabitModal({ habit, onSave, onDelete, onArchive, onClose }) {
   const [name, setName] = useState(habit.name)
   const [emoji, setEmoji] = useState(habit.emoji)
+  const [type, setType] = useState(habit.type ?? 'good')
   const [pointsPerCheckin, setPointsPerCheckin] = useState(habit.pointsPerCheckin ?? 1)
   const [ptsInput, setPtsInput] = useState(String(habit.pointsPerCheckin ?? 1))
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmArchive, setConfirmArchive] = useState(false)
 
+  function switchType(t) {
+    setType(t)
+    if (t === 'bad' && pointsPerCheckin > 0) { setPtsInput('-1'); setPointsPerCheckin(-1) }
+    if (t === 'good' && pointsPerCheckin < 0) { setPtsInput('1'); setPointsPerCheckin(1) }
+  }
+
   function handleSave() {
     if (!name.trim()) return
-    onSave(habit.id, { name: name.trim(), emoji, pointsPerCheckin })
+    onSave(habit.id, { name: name.trim(), emoji, pointsPerCheckin, type })
     onClose()
   }
 
@@ -84,9 +91,18 @@ function EditHabitModal({ habit, onSave, onDelete, onArchive, onClose }) {
           fontSize: '16px',
           fontWeight: '500',
           color: 'rgba(40,30,70,0.9)',
-          marginBottom: '20px',
+          marginBottom: '16px',
         }}>
           编辑习惯
+        </div>
+
+        {/* 好/坏切换 */}
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.5)', borderRadius: '10px', padding: '2px', gap: '2px', marginBottom: '16px' }}>
+          {[['good', '好习惯 +分', 'rgba(140,110,200,0.2)', 'rgba(80,50,140,0.85)'], ['bad', '坏习惯 −分', 'rgba(220,80,80,0.15)', 'rgba(180,50,50,0.85)']].map(([t, label, activeBg, activeColor]) => (
+            <div key={t} onClick={() => switchType(t)} style={{ flex: 1, textAlign: 'center', padding: '8px', borderRadius: '8px', fontSize: '13px', fontWeight: type === t ? '500' : '400', background: type === t ? activeBg : 'transparent', color: type === t ? activeColor : 'rgba(40,30,70,0.4)', cursor: 'pointer' }}>
+              {label}
+            </div>
+          ))}
         </div>
 
         {/* 名字输入 */}
@@ -164,16 +180,21 @@ function EditHabitModal({ habit, onSave, onDelete, onArchive, onClose }) {
 
         {/* 每次得分 */}
         <div style={{ marginBottom: '24px' }}>
-          <div style={labelStyle}>每次得分</div>
+          <div style={labelStyle}>{type === 'bad' ? '每次扣分' : '每次得分'}</div>
           <input
             type="number"
             value={ptsInput}
-            min={1}
             onChange={(e) => setPtsInput(e.target.value)}
             onBlur={() => {
-              const n = Math.max(1, parseInt(ptsInput) || 1)
-              setPtsInput(String(n))
-              setPointsPerCheckin(n)
+              if (type === 'bad') {
+                const n = Math.min(-1, parseInt(ptsInput) || -1)
+                setPtsInput(String(n))
+                setPointsPerCheckin(n)
+              } else {
+                const n = Math.max(1, parseInt(ptsInput) || 1)
+                setPtsInput(String(n))
+                setPointsPerCheckin(n)
+              }
             }}
             style={{ ...inputStyle, width: '100px' }}
           />
