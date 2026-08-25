@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { getYesterdayStr } from '../utils/habitLogic'
+import { getYesterdayStr, computeCleanStreak } from '../utils/habitLogic'
 
 const UNDO_WIDTH = 76
 
@@ -132,6 +132,8 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
 
   const { iconBg, btnBg } = habit
   const pts = habit.pointsPerCheckin ?? 1
+  const isBad = habit.type === 'bad'
+  const cleanStreak = isBad ? computeCleanStreak(habit) : 0
 
   return (
     <div style={{ position: 'relative', borderRadius: '18px' }}>
@@ -252,13 +254,20 @@ function HabitCard({ habit, onCheckin, onUndo, onLongPress, onYesterdayCheckin }
           </div>
           <div style={{
             fontSize: '11px',
-            color: 'rgba(40,30,70,0.45)',
+            color: isBad ? 'rgba(180,60,60,0.55)' : 'rgba(40,30,70,0.45)',
             marginTop: '2px',
           }}>
-            今日 {habit.todayCount} 次
-            · 累计 {habit.totalCount} 次
-            {habit.streak > 0 && ` · ${habit.streak} 天连击`}
-            {pts !== 1 && ` · ${pts > 0 ? '+' : ''}${pts}分/次`}
+            {isBad
+              ? habit.todayCount > 0
+                ? `今天已犯 ${habit.todayCount} 次 · ${pts}分/次`
+                : `已克制 ${cleanStreak} 天 · ${pts}分/次`
+              : <>
+                  今日 {habit.todayCount} 次
+                  · 累计 {habit.totalCount} 次
+                  {habit.streak > 0 && ` · ${habit.streak} 天连击`}
+                  {pts !== 1 && ` · +${pts}分/次`}
+                </>
+            }
           </div>
         </div>
 

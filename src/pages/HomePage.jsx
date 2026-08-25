@@ -4,31 +4,54 @@ import PtsChip from '../components/PtsChip'
 import MilestoneBanner from '../components/MilestoneBanner'
 import AddHabitModal from '../components/AddHabitModal'
 import EditHabitModal from '../components/EditHabitModal'
-import { doCheckin, undoCheckin, doBackdatedCheckin, getHabitColor, getYesterdayStr } from '../utils/habitLogic'
+import { doCheckin, undoCheckin, doBackdatedCheckin, getHabitColor, getYesterdayStr, computeCleanStreak } from '../utils/habitLogic'
 import { loadHabits, saveHabits, loadPts, savePts, loadArchivedHabits, saveArchivedHabits } from '../utils/storage'
 import { getDefaultHabits } from '../data/defaultHabits'
 import { TAGLINES, MAX_HABITS } from '../utils/constants'
 import { getTodayStr } from '../utils/habitLogic'
 
+const CLEAN_MILESTONES = { 3: 1, 5: 5, 7: 10 }
+
 function resetTodayCountIfNeeded(habits) {
   const today = getTodayStr()
+  const yesterday = getYesterdayStr()
   let changed = false
+  let bonusPts = 0
+
   const updated = habits.map(h => {
-    // 如果最后打卡日期不是今天，重置今日计数
+    let result = h
+
     if (h.lastCheckinDate !== today && h.todayCount !== 0) {
       changed = true
-      return { ...h, todayCount: 0 }
+      result = { ...result, todayCount: 0 }
     }
-    return h
+
+    if (h.type === 'bad' && h.lastCleanCheckDate !== today) {
+      changed = true
+      result = { ...result, lastCleanCheckDate: today }
+      const wasCleanYesterday = !(h.logs || []).some(l => l.date === yesterday)
+      if (wasCleanYesterday) {
+        const streak = computeCleanStreak({ ...h })
+        const mult = CLEAN_MILESTONES[streak]
+        if (mult) bonusPts += Math.abs(h.pointsPerCheckin ?? 1) * mult
+      }
+    }
+
+    return result
   })
-  return { updated, changed }
+
+  return { updated, changed, bonusPts }
 }
 
 function HomePage() {
   const [habits, setHabits] = useState(() => {
     const loaded = loadHabits() || getDefaultHabits()
-    const { updated, changed } = resetTodayCountIfNeeded(loaded)
+    const { updated, changed, bonusPts } = resetTodayCountIfNeeded(loaded)
     if (changed) saveHabits(updated)
+    if (bonusPts > 0) {
+      const cur = loadPts()
+      savePts({ remain: cur.remain + bonusPts, total: cur.total + bonusPts })
+    }
     return updated
   })
 
@@ -43,12 +66,19 @@ function HomePage() {
   // 定时检测：如果过了凌晨12点，重置今日计数
 useEffect(() => {
   function checkMidnight() {
-    const { updated, changed } = resetTodayCountIfNeeded(
+    const { updated, changed, bonusPts } = resetTodayCountIfNeeded(
       loadHabits() || []
     )
     if (changed) {
       setHabits(updated)
       saveHabits(updated)
+    }
+    if (bonusPts > 0) {
+      setPts(prev => {
+        const next = { remain: prev.remain + bonusPts, total: prev.total + bonusPts }
+        savePts(next)
+        return next
+      })
     }
   }
 
@@ -87,8 +117,8 @@ useEffect(() => {
     setHabits(newHabits)
 
     const newPts = {
-      remain: pts.remain + pointsEarned,
-      total: pts.total + pointsEarned,
+      remain: Math.max(0, pts.remain + pointsEarned),
+      total: Math.max(0, pts.total + pointsEarned),
     }
     setPts(newPts)
 

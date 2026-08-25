@@ -104,6 +104,21 @@ export function undoCheckin(habit) {
   return { updatedHabit, pointsLost: habit.pointsPerCheckin ?? 1 };
 }
 
+// 计算坏习惯的清白连续天数（从昨天往前数，没有记录的天数）
+export function computeCleanStreak(habit) {
+  const clickedDates = new Set((habit.logs || []).map(l => l.date))
+  let streak = 0
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  for (let i = 0; i < 400; i++) {
+    const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    if (clickedDates.has(ds)) break
+    streak++
+    d.setDate(d.getDate() - 1)
+  }
+  return streak
+}
+
 // 根据习惯 id 分配颜色（循环使用颜色列表）
 export function getHabitColor(index) {
   return HABIT_COLORS[index % HABIT_COLORS.length];
