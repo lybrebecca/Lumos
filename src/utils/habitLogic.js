@@ -107,10 +107,11 @@ export function undoCheckin(habit) {
 // 计算坏习惯的清白连续天数（从昨天往前数，没有记录的天数）
 export function computeCleanStreak(habit) {
   const clickedDates = new Set((habit.logs || []).map(l => l.date))
+  const createdAt = new Date(habit.id)
   let streak = 0
   const d = new Date()
   d.setDate(d.getDate() - 1)
-  for (let i = 0; i < 400; i++) {
+  while (d >= createdAt) {
     const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     if (clickedDates.has(ds)) break
     streak++
